@@ -1,93 +1,64 @@
 package com.orange.test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-
-import org.openqa.selenium.TimeoutException;
 import org.orange.pom.AddEmployeePage;
 import org.orange.pom.PIPPage;
 import org.orange.pom.UpdateEmployeePage;
-import org.testng.annotations.DataProvider;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.orange.hrm.base.BaseTest;
-import com.orange.hrm.util.ConfigPropertiess;
 
 public class AddEmployeeTest extends BaseTest {
 
-	@DataProvider(name="AddEmployeeData")
-	public Object[][] getEmployeeData() {
-		return ConfigPropertiess.getData("AddEmployeeData");
-
-	}
-	@Test(dataProvider = "AddEmployeeData",priority = 1,description = "PIP Add Employee Data")
-	public void addEmployeeAdmin(String Testcase,String Description,String FirstName,String	MiddleName,String LastName,String EmployeeId,
-			String createLogin,String username,String password,	String confirmPassword,
-			String status, String imagePath,String ExpectedResult, String Type) {
-		PIPPage pip=new PIPPage(driver);
-		AddEmployeePage addEmployee=new AddEmployeePage(driver);
-		UpdateEmployeePage updateEmployee=new UpdateEmployeePage(driver);
-
-		System.out.println(Description);
-		pip.PIPView();	
-		//System.out.println("pip view");
-	//	System.out.println(driver.getCurrentUrl());
+	@Test(dataProvider = "AddEmployeeDatas", dataProviderClass = EmployeeListTest.class)
+	public void loginExcel(String Testcase, String Description, String FirstName, String MiddleName, String LastName,
+			String EmployeeId, String createLogin, String username, String password, String confirmPassword,
+			String status, String imagePath, String ExpectedResult, String Type) throws InterruptedException {
+		superLoginmethod();
+		PIPPage pip = new PIPPage();
+		AddEmployeePage addemp = new AddEmployeePage();
+		UpdateEmployeePage updemp = new UpdateEmployeePage();
+		pip.PIPView();
 		pip.PIPAdd();
-		addEmployee.addMandatoryDetails(FirstName, MiddleName, LastName, EmployeeId);
+		// Mandatory field add
+		addemp.addMandatoryDetails(FirstName, MiddleName, LastName, EmployeeId);
+
+		// Image validate
+		if (imagePath != null && !imagePath.isBlank()) {
+			String imgs = System.getProperty("user.dir") + imagePath;
+			addemp.imageUpload(imgs);
+			Thread.sleep(3000);
+			assertTrue(addemp.imageUploadSuccess().contains("data:image"), "Image should be Upload");
+			Assert.assertFalse(addemp.imageError().isDisplayed(), "Image should show error");
+		}
+		if (createLogin.equalsIgnoreCase("yes")) {
+			addemp.createToggleSelect("yes");
+			addemp.createLoginDetails(username, password, confirmPassword);
+			addemp.StatusRatio(status);
+
+		}
+		addemp.saveButton();
+		Thread.sleep(2000);
+		boolean saved = false;
 		try {
-			if (!imagePath.isBlank()) {
-				String imgs = System.getProperty("user.dir") + imagePath;
-				//System.out.println("Uploading image: " + imgs);
-				addEmployee.imageUpload(imgs);
-
-				// Wait briefly for upload
-				Thread.sleep(2000);
-
-				// Try checking for success first
-				if (addEmployee.imageUploadSuccess().contains("data:image")) {
-					System.out.println("✅ Image uploaded successfully");
-				} else {
-					// If not success, check if any error message exists
-					try {
-						String imageError = addEmployee.imageError();
-						System.out.println("⚠️ Image upload failed: " + imageError);
-					} catch (TimeoutException e) {
-						System.out.println("⚠️ Neither image nor error message found");
-					}
-				}
-			}
+			saved = updemp.verifyUpdatePage().isDisplayed();
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("❌ File upload process failed");
+			// TODO: handle exception
+			saved = false;
 		}
-
-
-		if (addEmployee.createToggleSelect(createLogin)) {
-			addEmployee.createLoginDetails(username, password, confirmPassword);
-
-			addEmployee.StatusRatio(status);
-
-			
-		} 
-//		else {
-//			addEmployee.saveButton();
-//			assertTrue(updateEmployee.VerifyUpdatePage().contains("Personal Details"));
-//		}
-
-		addEmployee.saveButton();
-		if (Type.contains("Positive")) {
-			//assertTrue(updateEmployee.VerifyUpdatePage().contains("Personal Details"));	
-			assertEquals(FirstName, updateEmployee.VerifyFirstNmae(), "First Name not save Properly");
-			System.out.println("Save properly with verify fist name");
-		}else {
-		System.out.println("Save properly without verify fist name");
+		if (Type.equalsIgnoreCase("Positive")) {
+			assertTrue(saved, "Expected to navigate to Personal Details page but it did not.");
+			assertEquals(updemp.verifyFirstName().getAttribute("value"), FirstName, "First name not saved correctly");
+			System.out.println("Employee save case sucessfully " + Testcase);
+		} else {
+			assertFalse(saved, "Should NOT navigate to Personal Details for invalid data");
+			System.out.println("Negative validation passed " + Testcase);
 		}
+		logout();
 	}
 
 }
-//// System.out.println("Testcase"+Testcase+"Description"+Description+"FirstName"+FirstName+"MiddleName"+MiddleName+"LastName"
-//+LastName+"EmployeeId"+EmployeeId+"createLogin"+createLogin+"username"+username+"password"+password+"confirmPassword"+confirmPassword
-//		+"status"+status+"imagePath"+imagePath+"ExpectedResult"+ExpectedResult+"Type"+Type);

@@ -3,7 +3,9 @@ import static org.testng.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,7 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Optional;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
@@ -38,12 +41,18 @@ import org.testng.annotations.Test;
 import com.orange.hrm.util.*;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-public class BaseTest {
-	protected WebDriver driver; 
-Properties prop;
+@Listeners(com.orange.hrm.util.ListenerUtil.class)
+public abstract class BaseTest {
+	protected static ThreadLocal<WebDriver> driver	=new ThreadLocal<>();
+  Properties prop;
+
 String browsered;
 String url;
 WebDriverWait waits;
+
+public static WebDriver getdriver() {
+	return driver.get();
+}
 
 	@BeforeClass
 	@Parameters("browser")
@@ -77,52 +86,53 @@ public void setup(@Optional("") String xmlbrowser) {
 	    options.addArguments("--disable-notifications");
 
 	    WebDriverManager.chromedriver().setup();
-	    driver = new ChromeDriver(options);
+	   
+	  driver.set(new ChromeDriver(options));
 	    break;		
 			
 	case "firefox":
 		FirefoxOptions optionsf = new FirefoxOptions();
 		optionsf.addPreference("signon.rememberSignons", false);
 		WebDriverManager.firefoxdriver().setup();
-		driver=new FirefoxDriver(optionsf);
+		driver.set(new FirefoxDriver(optionsf));
 			break;
 	case "edge":
 		WebDriverManager.edgedriver().setup();
-		driver=new EdgeDriver();
+		driver.set(new EdgeDriver());
 			break;
 
 	default:
 		throw new IllegalArgumentException("Invalid browser name: " + browsered);
 		
 	}
-	if (driver == null) {
+	if (getdriver() == null) {
 	    throw new IllegalStateException("WebDriver not initialized. Check browser name: " + browsered);
 	}
-	driver.manage().window().maximize();
-	driver.get(url);
+	getdriver().manage().window().maximize();
+	getdriver().get(url);
 	waitForPageLoad();
 
-	driver.navigate().refresh();
-	driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60));
-	//System.out.println(driver.getCurrentUrl());
-	//System.out.println(driver.getPageSource()+driver.getTitle());
+	getdriver().navigate().refresh();
+	getdriver().manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60));
 
 }
 	@AfterClass(alwaysRun = true)
 	public void tear() {
-		 if (driver != null) {
-		        driver.quit();
-		        driver = null;
+		 if (getdriver() != null) {
+			 getdriver().quit();
+		        driver.remove();
 		    }
 	}
 	public void waitForPageLoad() {
-		new WebDriverWait(driver, Duration.ofSeconds(30))
+		new WebDriverWait(getdriver(), Duration.ofSeconds(30))
 	    .until((WebDriver wd) -> ((JavascriptExecutor) wd)
 	    .executeScript("return document.readyState").equals("complete"));
 	}
-	public static String takeScreenShot(WebDriver driver,String Path) {
-		  File scr=((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-		 String path =(System.getProperty("user.dir")+"//"+Path+".png");
+	public static String takeScreenShot(String Path) {
+		  File scr=((TakesScreenshot)getdriver()).getScreenshotAs(OutputType.FILE);
+		  String dates = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+		 String path =(System.getProperty("user.dir")+"//Screenshot//"+Path+"_"+dates+".png");
+		 
 		 File FinalImage=new File(path);
 		  try {
 			FileUtils.copyFile(scr, FinalImage);
@@ -134,60 +144,23 @@ public void setup(@Optional("") String xmlbrowser) {
 	}
 	
 	
-//	@BeforeMethod
-//	public void loginmethod() {
-//		LoginPage logins=new LoginPage(driver);
-//		logins.login("Vikram", "Vikram@123");
-//	}
-//	
-//	@AfterMethod(alwaysRun = true)
-//	public void logout() {
-//		LoginPage logino=new LoginPage(driver);
-//		logino.logout();
-//	}
-	@Test
-	public void popupclose() throws InterruptedException {
-		Thread.sleep(30);
-		waits=new WebDriverWait(driver, Duration.ofSeconds(30));
-		try {
-		WebElement closeButton = driver.findElement(By.xpath("//span[normalize-space()='✕']"));
-		closeButton.click();}
-		catch (Exception e) {
-			System.out.println("Close POPup not show");// TODO: handle exception
-		}
-		Thread.sleep(30);
-		WebElement searchInput = driver.findElement(By.cssSelector("input[placeholder='Search for Products, Brands and More']"));
-		searchInput.sendKeys("iphones");
-		Thread.sleep(30);
-		// List<WebElement> iphoneList = driver.findElements(By.cssSelector(".li._3D0G9a a.oleBil"));
-		List<WebElement> iphoneList = driver.findElements(By.xpath("//li[@class='_3D0G9a']"));
-		waits.until(ExpectedConditions.visibilityOfAllElements(iphoneList));
-		System.out.println("Phone find: " + iphoneList.size());
-		for (WebElement lists : iphoneList) {
-			System.out.println("hello");
-			String text=lists.getText();
-			try {
-				System.out.println("Phone List :" + text);
-			} catch (Exception e) {
-				System.out.println("Not found");
-				// TODO: handle exception
-			}
-			
-			if (text.contains("iphone 17 pro")) {
-				waits.until(ExpectedConditions.elementToBeClickable(lists));
-				lists.click();
-				break;
-				
-			}
-			else
-				System.out.println("Not contain");
-			
-		}
-		String textValid = driver.findElement(By.xpath("//span[normalize-space()='iphone 17 pro']")).getText();
-		assertTrue(textValid.contains("iphone 17 pro"));
-		
-		
-		// TODO Auto-generated method stub
-
+	
+	public void superLoginmethod() {
+		 String username = prop.getProperty("userName");
+		 String password = prop.getProperty("password");
+		LoginPage logins=new LoginPage();
+		logins.login(username, password);
+	} 
+	public  void empLoginmethod() {
+		String empusername = prop.getProperty("empUserName");
+		 String emppassword = prop.getProperty("empPassword");
+		LoginPage logins=new LoginPage();
+		logins.login(empusername, emppassword);
+	} 
+	
+	
+	public  void logout() {
+		LoginPage logino=new LoginPage();
+		logino.logout();
 	}
-}
+	}

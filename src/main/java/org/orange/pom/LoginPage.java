@@ -5,13 +5,16 @@ import java.time.Duration;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import com.orange.hrm.base.BaseTest;
+
 public class LoginPage {
-	WebDriver driver;
+	 WebDriver driver;
 	WebDriverWait wait;
 	//	private By byUserName=By.cssSelector("input[placeholder='Username']");
 	// private By byUserName=By.xpath("//input[@name='username']");
@@ -27,49 +30,67 @@ public class LoginPage {
 	private By byPasswordRequired=By.xpath("//input[@placeholder='Password']/following::span[text()='Required']");
 	private By byUserDropdown=By.cssSelector(".oxd-icon.bi-caret-down-fill.oxd-userdropdown-icon");
 	private By byLogOut=By.xpath("//a[normalize-space()='Logout'][@class='oxd-userdropdown-link']");
-	public LoginPage(WebDriver driver) {
-		this.driver=driver;
-		this.wait=new WebDriverWait(driver, Duration.ofSeconds(30));
+	private By byLoginPage =By.xpath("//h5[normalize-space()='Login']");
+	private By validateforgotpassword=By.xpath("//p[normalize-space()='Forgot your password?']");
+	private By validateUsernamefield=By.xpath("//label[normalize-space()='Username']");
+	private By validatePasswordfield=By.xpath("//label[normalize-space()='Password']");
+	public LoginPage() {
+		this.driver=BaseTest.getdriver();
+		this.wait=new WebDriverWait(BaseTest.getdriver(), Duration.ofSeconds(30));
 		// TODO Auto-generated constructor stub
 	}
-
+public WebElement verifyLoginPage() {
+	return wait.until(ExpectedConditions.visibilityOfElementLocated(byLoginPage));
+}
 	public void login(String username, String password) {
 		wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div#app")));
 		WebElement user = wait.until(ExpectedConditions.visibilityOfElementLocated(byUserName));
 		WebElement passward = wait.until(ExpectedConditions.visibilityOfElementLocated(byPassword));
 		WebElement submitButton = wait.until(ExpectedConditions.elementToBeClickable(bySubmit));
+		JavascriptExecutor js= ((JavascriptExecutor)BaseTest.getdriver());
+		js.executeScript("arguments[0].value='';", user);
+		js.executeScript("arguments[0].value='';", passward);
 		user.clear();
-		user.sendKeys(username);
 		passward.clear();
+		user.sendKeys(Keys.CONTROL+"a",Keys.DELETE);
+		passward.sendKeys(Keys.CONTROL+"a",Keys.DELETE);
+		user.sendKeys(username);
 		passward.sendKeys(password);
 		submitButton.click();
 	}
-	public String loginError() {
+	public WebElement loginError() {
 
-		return wait.until(ExpectedConditions.visibilityOfElementLocated(byLoginError)).getText();
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(byLoginError));
 	}
-	public String loginUserRequired() {
-		return wait.until(ExpectedConditions.visibilityOfElementLocated(byLoginRequired)).getText();
+	public WebElement loginUserRequired() {
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(byLoginRequired));
 	}
-	public String loginPassRequired() {
-		return wait.until(ExpectedConditions.visibilityOfElementLocated(byPasswordRequired)).getText();
+	public WebElement loginPassRequired() {
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(byPasswordRequired));
 	}
-	public boolean loginSuccess() {
-		try {
-			Thread.sleep(3000);
-			return wait.until(ExpectedConditions.visibilityOfElementLocated(byDashboard)).isDisplayed();
-		} catch (Exception e) {
-			return false;
-			// TODO: handle exception
-		}
+	public WebElement loginSuccess() {
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(byDashboard));
+		
 	}
 	public void logout() {
 		wait.until(ExpectedConditions.elementToBeClickable(byUserDropdown)).click();
 		wait.until(ExpectedConditions.elementToBeClickable(byLogOut)).click();
 
 	}
-	public String loginUserNameValid() {
-		return wait.until(ExpectedConditions.elementToBeClickable(byLoginUserName)).getText();	
+	public WebElement loginUserNameValid() {
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(validateUsernamefield));	
 	}
+	public String forgotpasswordColour() {
+	   String cssValue = wait.until(ExpectedConditions.visibilityOfElementLocated(validateforgotpassword)).getCssValue("color");
+	   return cssValue;
+	}
+	public WebElement loginPasswordNameValid() {
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(validateUsernamefield));	
+
+	}
+	public WebElement submitButton() {
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(bySubmit));
+	}
+	
 
 }

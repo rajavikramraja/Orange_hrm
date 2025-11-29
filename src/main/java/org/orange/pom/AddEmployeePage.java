@@ -7,7 +7,9 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.orange.hrm.base.BaseTest;;
 
 public class AddEmployeePage {
 	WebDriver driver;
@@ -36,11 +38,14 @@ public class AddEmployeePage {
 	private By byimageerror=By.cssSelector("span.oxd-text.oxd-text--span.oxd-input-field-error-message.oxd-input-group__message");
 	private By byImagePath=By.cssSelector("img.employee-image");
 
-	public AddEmployeePage(WebDriver driver) {
+	public AddEmployeePage() {
 		// TODO Auto-generated constructor stub
-		this.driver=driver;
-		this.wait=new WebDriverWait(driver, Duration.ofSeconds(30));
+		this.driver=BaseTest.getdriver();
+		this.wait=new WebDriverWait(BaseTest.getdriver(), Duration.ofSeconds(30));
 	}
+	
+
+	
 	public void addMandatoryDetails(String FirstName,String MiddleName,String LastName, String EmployeeId ) {
 		WebElement firstNameField = wait.until(ExpectedConditions.visibilityOfElementLocated(byFirstNameField));
 		WebElement middleNameField = wait.until(ExpectedConditions.visibilityOfElementLocated(byMiddleNameField));
@@ -48,10 +53,13 @@ public class AddEmployeePage {
 		WebElement employeeId = wait.until(ExpectedConditions.visibilityOfElementLocated(byEmployeeId));
 
 		firstNameField.clear();
+		firstNameField.sendKeys(Keys.CONTROL + "a" , Keys.DELETE);
 		firstNameField.sendKeys(FirstName);
 		middleNameField.clear();
+		middleNameField.sendKeys(Keys.CONTROL + "a" , Keys.DELETE);
 		middleNameField.sendKeys(MiddleName);
 		lastNameFiled.clear();
+		lastNameFiled.sendKeys(Keys.CONTROL + "a" , Keys.DELETE);
 		lastNameFiled.sendKeys(LastName);
 		employeeId.clear();
 		employeeId.sendKeys(Keys.CONTROL + "a" , Keys.DELETE);
@@ -66,8 +74,8 @@ public class AddEmployeePage {
 		ImageInput.sendKeys(Imagepath);
 	}
 
-	public String imageError() {
-		String imageErrorMsg = wait.until(ExpectedConditions.presenceOfElementLocated(byimageerror)).getText();
+	public WebElement imageError() {
+		WebElement imageErrorMsg = wait.until(ExpectedConditions.presenceOfElementLocated(byimageerror));
 		return imageErrorMsg;
 	}
 	public String imageUploadSuccess() {
@@ -77,7 +85,7 @@ public class AddEmployeePage {
 	}
 	public boolean createToggleSelect(String createLogin) {
 		boolean selected=false;
-		if (createLogin.contains("yes")) {
+		if (createLogin.equalsIgnoreCase("yes")) {
 			WebElement createToggle = wait.until(ExpectedConditions.elementToBeClickable(byCreateLogin));
 			createToggle.click();
 			 selected = true;
@@ -115,13 +123,7 @@ public class AddEmployeePage {
 		
 		return selected;
 		}
-//	public boolean disabledStatus() {
-//		WebElement statusDisable = wait.until(ExpectedConditions.elementToBeClickable(byStatusDisabled));
-//		statusDisable.click();
-//		return statusDisable.isSelected();
 //
-//	}
-
 	public void saveButton() {
 		wait.until(ExpectedConditions.elementToBeClickable(bySaveButton)).click();
 	}

@@ -19,9 +19,9 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 
 public class ConfigPropertiess {
-	  static Properties prop;
-       WebDriver driver;
-	
+	static Properties prop;
+	WebDriver driver;
+
 	public static Properties initProperty(){
 		final String path=System.getProperty("user.dir")+"\\src\\test\\resources\\config.properties";
 		try {
@@ -44,11 +44,11 @@ public class ConfigPropertiess {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		return prop;
 	}
 
-	
+
 	public static Object[][] getData(String SheetName){
 		String excelPath=System.getProperty("user.dir")+"\\src\\test\\resources\\Testdata.xlsx";
 		File excelFile=new File(excelPath);
@@ -59,34 +59,74 @@ public class ConfigPropertiess {
 			Sheet sheets = wrk.getSheet(SheetName);
 			int physicalNumberOfRows = sheets.getPhysicalNumberOfRows()+1;
 			int physicalNumberOfCells = sheets.getRow(0).getPhysicalNumberOfCells();
-  		  data=new Object[physicalNumberOfRows-1][physicalNumberOfCells];
-//			return data;			
+			data=new Object[physicalNumberOfRows-1][physicalNumberOfCells];
+			DataFormatter format=new DataFormatter();
+			//			return data;			
 			for (int i = 1; i < physicalNumberOfRows; i++) {
 				Row row = sheets.getRow(i);
+				if(row == null) {
+
+					continue;}
 				for (int j = 0; j < physicalNumberOfCells; j++) {
-					Cell cell;
-					if(row == null) {
-						 cell =null;
-					}else {
-				 cell = row.getCell(j);}
-									
-				DataFormatter format=new DataFormatter();
-				if(cell==null) {
-					data[i-1][j]="";
-				}
-				else
-				data[i-1][j]=format.formatCellValue(cell);
-				//System.out.println("Data"+Arrays.deepToString(data));
+					Cell cell = row.getCell(j);
+
+					if(cell==null) {
+						data[i-1][j]="";
+					}
+					else
+						data[i-1][j]=format.formatCellValue(cell);
+					//System.out.println("Data"+Arrays.deepToString(data));
 				}}
-			
+
 			excelInput.close();
 			wrk.close();
 		}catch (Exception e) {
-		// TODO: handle exception
-	}
-		
+			// TODO: handle exception
+		}
+
 		return data;
-	}}
+	}
+	public static Object[][] getDataExcel(String SheetName) {
+		String path=System.getProperty("user.dir")+"\\src\\test\\resources\\Testdata.xlsx";
+		File file=new File(path);
+		FileInputStream fileInputStream;
+		Object[][] finalData=null;
+		try {
+			fileInputStream = new FileInputStream(file);
+			Workbook workbook = new XSSFWorkbook(fileInputStream);
+			Sheet sheet = workbook.getSheet(SheetName);
+			int rowcount = sheet.getPhysicalNumberOfRows();
+			int cellcount = sheet.getRow(0).getPhysicalNumberOfCells();
+			int datatemp=0;
+			Object[][] tempData=new Object[rowcount-1][cellcount];
+			DataFormatter format=new DataFormatter();
+			for (int i = 1; i < rowcount; i++) {
+				Row row = sheet.getRow(i);
+				if(row==null)continue;
+				boolean isempty=true;
+				for (int j = 0; j < cellcount; j++) {
+					Cell cell = row.getCell(j);
+					String value=(cell==null)?"":format.formatCellValue(cell);
+					if (!value.trim().isEmpty()) isempty=false;
+					tempData[datatemp][j]=value;
+				}
+				if(!isempty)datatemp++;
+			}
+			finalData=new Object[datatemp][cellcount];
+			for (int i = 0; i < datatemp; i++) {
+				finalData[i]=tempData[i];
+
+			}
+			fileInputStream.close();
+			workbook.close();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return finalData;	
+
+	}
+}
 
 //
 //if(cell!=null) {
